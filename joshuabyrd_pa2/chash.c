@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <pthread.h>
+#include <time.h>
 
 #define MAX_LINE 256
 #define MAX_THREADS 100
@@ -12,7 +14,27 @@ typedef struct {
     FILE* output;
 } threadArg;
 
+// Global locks/variables
+pthread_rwlock_t rwlock;
+pthread_mutex_t cv_mutex;
+pthread_cond_t insert_complete;
+int pending_inserts = 0;
+int lock_acquisitions = 0;
+int lock_releases = 0;
+hashRecord* head = NULL;
+
+// Util function to get time in milliseconds
+uint64_t get_current_time_in_micro() {
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    // If I don't divide by 1000, the least significant digit always becomes the same digit for whatever reason
+    return ((uint64_t)(ts.tv_sec) * (uint64_t)1000000000 + (uint64_t)ts.tv_nsec) / 1000;
+}
+
+// Each thread runs processs_command
 void* process_command(void* arg) {
+    time_t timestamp;
+    // Get command and output file
     threadArg* thread_arg = (threadArg*)arg;
     char command_line[MAX_LINE];
     strcpy(command_line, thread_arg->command);
@@ -22,30 +44,31 @@ void* process_command(void* arg) {
     char* param1 = strtok(NULL, ",");
     char* param2 = strtok(NULL, ",");
     
-    time_t timestamp = time(NULL);
-    
     if (strcmp(command, "insert") == 0) {
         uint32_t salary = atoi(param2);
-        fprintf(output, "%ld,INSERT,%s,%u\n", timestamp, param1, salary);
-        hash_table_insert(param1, salary);
+        insert(param1, salary, output);
+        timestamp = get_current_time_in_micro();
+        fprintf(output, "%ld: INSERT,%s,%u\n", timestamp, param1, salary);
     }
     else if (strcmp(command, "delete") == 0) {
-        fprintf(output, "%ld,DELETE,%s\n", timestamp, param1);
-        hash_table_delete(param1);
+        delete(param1, output);
+        timestamp = get_current_time_in_micro();
+        fprintf(output, "%ld: DELETE,%s\n", timestamp, param1);
     }
     else if (strcmp(command, "search") == 0) {
-        fprintf(output, "%ld,SEARCH,%s\n", timestamp, param1);
-        hashRecord* record = hash_table_search(param1);
+        hashRecord* record = search(param1, output);
         if (record) {
-            fprintf(output, "%u,%s,%u\n", record->hash, record->name, record->salary);
-            free(record);
+            timestamp = get_current_time_in_micro();
+            fprintf(output, "%ld: SEARCH,%s\n", timestamp, param1);
+            // fprintf(output, "%u,%s,%u\n", record->hash, record->name, record->salary);
+            // free(record);
         } else {
-            fprintf(output, "No Record Found\n");
+            timestamp = get_current_time_in_micro();
+            fprintf(output, "%ld: SEARCH: No record found\n", timestamp);
         }
     }
     else if (strcmp(command, "print") == 0) {
-        fprintf(output, "%ld,PRINT\n", timestamp);
-        hash_table_print(output);
+        print_table(output);
     }
     
     free(thread_arg);
@@ -61,13 +84,13 @@ int main() {
         return 1;
     }
     
-    hash_table_init();
+    init_table();
     
     char line[MAX_LINE];
     int num_threads = 0;
     pthread_t threads[MAX_THREADS];
     
-    // Read first line for thread count
+    // Get number of threads
     if (fgets(line, sizeof(line), command_file)) {
         char* token = strtok(line, ",");
         if (strcmp(token, "threads") == 0) {
@@ -75,11 +98,12 @@ int main() {
             num_threads = atoi(token);
         }
     }
+
+    fprintf(output_file, "Running %d threads\n", num_threads);
     
     // Process commands
     int thread_index = 0;
     while (fgets(line, sizeof(line), command_file) && thread_index < num_threads) {
-        // Remove newline
         line[strcspn(line, "\n")] = 0;
         
         threadArg* arg = malloc(sizeof(threadArg));
@@ -98,10 +122,10 @@ int main() {
     // Print to output_file
     fprintf(output_file, "\nNumber of lock acquisitions: %d\n", lock_acquisitions);
     fprintf(output_file, "Number of lock releases: %d\n", lock_releases);
-    hash_table_print(output_file);
+    print_table(output_file);
     
     // Cleanup
-    hash_table_destroy();
+    destroy_table();
     fclose(command_file);
     fclose(output_file);
     
