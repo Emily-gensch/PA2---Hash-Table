@@ -1,4 +1,5 @@
 *
-!*.c 
+!chash.c
+!*.h
 !*.txt
 !Makefile
