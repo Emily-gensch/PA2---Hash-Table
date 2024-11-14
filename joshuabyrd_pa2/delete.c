@@ -9,7 +9,6 @@ void delete(char* name, FILE* output) {
     pthread_mutex_lock(&cv_mutex);
     while (pending_inserts > 0) {
         timestamp = get_current_time_in_micro();
-        fprintf(output, "%lu: WAITING ON INSERTS\n", timestamp);
         pthread_cond_wait(&insert_complete, &cv_mutex);
     }
     pthread_mutex_unlock(&cv_mutex);
@@ -19,8 +18,8 @@ void delete(char* name, FILE* output) {
     // Acquire write lock
     pthread_rwlock_wrlock(&rwlock);
     timestamp = get_current_time_in_micro();
-    fprintf(output, "%lu: WRITE LOCK ACQUIRED\n", timestamp);
-    fprintf(output, "%lu: DELETE AWAKENED\n", timestamp);
+    fprintf(output, "%llu: WRITE LOCK ACQUIRED\n", timestamp);
+    fprintf(output, "%llu: DELETE AWAKENED\n", timestamp);
     lock_acquisitions++;
 
     hashRecord* current = head;
@@ -37,7 +36,7 @@ void delete(char* name, FILE* output) {
             // Delete record
             free(current);
             timestamp = get_current_time_in_micro();
-            fprintf(output, "%ld: DELETE,%s\n", timestamp, name);
+            fprintf(output, "%lld: DELETE,%s\n", timestamp, name);
             break;
         }
         prev = current;
@@ -47,7 +46,7 @@ void delete(char* name, FILE* output) {
     // Release write lock
     pthread_rwlock_unlock(&rwlock);
     timestamp = get_current_time_in_micro();
-    fprintf(output, "%lu: WRITE LOCK RELEASED\n", timestamp);
+    fprintf(output, "%llu: WRITE LOCK RELEASED\n", timestamp);
     lock_releases++;
 
 }

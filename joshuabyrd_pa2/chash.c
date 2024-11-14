@@ -84,8 +84,10 @@ int main() {
             num_threads = atoi(token);
         }
     }
-
-    fprintf(output_file, "Running %d threads\n", num_threads);
+	
+	time_t timestamp = get_current_time_in_micro();
+	fprintf(output_file, "Running %d threads\n", num_threads);
+	fprintf(output_file, "%lld: WAITING ON INSERTS\n", timestamp);
     
     // Process commands
     int thread_index = 0;
@@ -104,7 +106,7 @@ int main() {
     for (int i = 0; i < thread_index; i++) {
         pthread_join(threads[i], NULL);
     }
-    
+	    
     // Print to output_file
     fprintf(output_file, "Finished all threads.\n");
     fprintf(output_file, "Number of lock acquisitions: %d\n", lock_acquisitions);

@@ -10,7 +10,7 @@ void search(char* name, FILE* output) {
     // Acquire read lock
     pthread_rwlock_rdlock(&rwlock);
     timestamp = get_current_time_in_micro();
-    fprintf(output, "%ld: READ LOCK ACQUIRED\n", timestamp);
+    fprintf(output, "%lld: READ LOCK ACQUIRED\n", timestamp);
     lock_acquisitions++;
     hashRecord* current = head;
     hashRecord* result = NULL;
@@ -31,16 +31,16 @@ void search(char* name, FILE* output) {
 
     if (current) {
        timestamp = get_current_time_in_micro();
-       fprintf(output, "%ld: SEARCH,%s\n", timestamp, name);
+       fprintf(output, "%lld: SEARCH,%s\n", timestamp, name);
     }
     else {
         timestamp = get_current_time_in_micro();
-        fprintf(output, "%ld: SEARCH: No record found\n", timestamp);
+        fprintf(output, "%lld: SEARCH: No record found\n", timestamp);
     }
 
     // Release read lock
     pthread_rwlock_unlock(&rwlock);
     timestamp = get_current_time_in_micro();
-    fprintf(output, "%ld: READ LOCK RELEASED\n", timestamp);
+    fprintf(output, "%lld: READ LOCK RELEASED\n", timestamp);
     lock_releases++;
 }

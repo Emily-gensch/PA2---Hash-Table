@@ -6,7 +6,7 @@ void print_table(FILE* output) {
     // Acquire read lock
     pthread_rwlock_rdlock(&rwlock);
     timestamp = get_current_time_in_micro();
-    fprintf(output, "%ld: READ LOCK ACQUIRED\n", timestamp);
+    fprintf(output, "%lld: READ LOCK ACQUIRED\n", timestamp);
     lock_acquisitions++;
 
     // Print table
@@ -19,6 +19,6 @@ void print_table(FILE* output) {
     // Release read lock
     pthread_rwlock_unlock(&rwlock);
     timestamp = get_current_time_in_micro();
-    fprintf(output, "%ld: READ LOCK RELEASED\n", timestamp);
+    fprintf(output, "%lld: READ LOCK RELEASED\n", timestamp);
     lock_releases++;
 }

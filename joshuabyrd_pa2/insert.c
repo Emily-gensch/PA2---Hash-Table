@@ -15,7 +15,7 @@ void insert(char* name, uint32_t salary, FILE* output) {
     // Acquire write lock
     pthread_rwlock_wrlock(&rwlock);
     timestamp = get_current_time_in_micro();
-    fprintf(output, "%ld: WRITE LOCK ACQUIRED\n", timestamp);
+    fprintf(output, "%lld: WRITE LOCK ACQUIRED\n", timestamp);
     lock_acquisitions++;
 
     // Find insertion point (maintain sorted order by hash)
@@ -47,14 +47,14 @@ void insert(char* name, uint32_t salary, FILE* output) {
                 head = new_record;
             }
             timestamp = get_current_time_in_micro();
-            fprintf(output, "%ld: INSERT,%u,%s,%u\n", timestamp, hash, name, salary);
+            fprintf(output, "%lld: INSERT,%u,%s,%u\n", timestamp, hash, name, salary);
         }
     }
 
     // Release write lock
     pthread_rwlock_unlock(&rwlock);
     timestamp = get_current_time_in_micro();
-    fprintf(output, "%ld: WRITE LOCK RELEASED\n", timestamp);
+    fprintf(output, "%lld: WRITE LOCK RELEASED\n", timestamp);
     lock_releases++;
 
     // Decrement pending inserts and signal if complete
