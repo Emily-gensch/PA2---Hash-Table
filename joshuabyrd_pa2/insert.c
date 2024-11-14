@@ -11,6 +11,9 @@ void insert(char* name, uint32_t salary, FILE* output) {
     pthread_mutex_lock(&cv_mutex);
     pending_inserts++;
     pthread_mutex_unlock(&cv_mutex);
+    
+    timestamp = get_current_time_in_micro();
+    fprintf(output, "%lld: INSERT,%u,%s,%u\n", timestamp, hash, name, salary);
 
     // Acquire write lock
     pthread_rwlock_wrlock(&rwlock);
@@ -46,8 +49,6 @@ void insert(char* name, uint32_t salary, FILE* output) {
                 new_record->next = head;
                 head = new_record;
             }
-            timestamp = get_current_time_in_micro();
-            fprintf(output, "%lld: INSERT,%u,%s,%u\n", timestamp, hash, name, salary);
         }
     }
 

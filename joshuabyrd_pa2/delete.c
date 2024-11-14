@@ -12,14 +12,19 @@ void delete(char* name, FILE* output) {
         pthread_cond_wait(&insert_complete, &cv_mutex);
     }
     pthread_mutex_unlock(&cv_mutex);
+	
+	timestamp = get_current_time_in_micro();
+	fprintf(output, "%llu: DELETE AWAKENED\n", timestamp);
 
     uint32_t hash = jenkins_one_at_a_time_hash(name);
+	
+	timestamp = get_current_time_in_micro();
+	fprintf(output, "%lld: DELETE,%s\n", timestamp, name);
 
     // Acquire write lock
     pthread_rwlock_wrlock(&rwlock);
     timestamp = get_current_time_in_micro();
     fprintf(output, "%llu: WRITE LOCK ACQUIRED\n", timestamp);
-    fprintf(output, "%llu: DELETE AWAKENED\n", timestamp);
     lock_acquisitions++;
 
     hashRecord* current = head;
@@ -35,8 +40,6 @@ void delete(char* name, FILE* output) {
             }
             // Delete record
             free(current);
-            timestamp = get_current_time_in_micro();
-            fprintf(output, "%lld: DELETE,%s\n", timestamp, name);
             break;
         }
         prev = current;
