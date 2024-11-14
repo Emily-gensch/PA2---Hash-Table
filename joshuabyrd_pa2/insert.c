@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-bool insert(char* name, uint32_t salary, FILE* output) {
+void insert(char* name, uint32_t salary, FILE* output) {
     time_t timestamp;
     uint32_t hash = jenkins_one_at_a_time_hash(name);
 
@@ -17,7 +17,6 @@ bool insert(char* name, uint32_t salary, FILE* output) {
     timestamp = get_current_time_in_micro();
     fprintf(output, "%ld: WRITE LOCK ACQUIRED\n", timestamp);
     lock_acquisitions++;
-    bool success = false;
 
     // Find insertion point (maintain sorted order by hash)
     hashRecord* current = head;
@@ -30,7 +29,6 @@ bool insert(char* name, uint32_t salary, FILE* output) {
     // Update existing record
     if (current && current->hash == hash) {
         current->salary = salary;
-        success = true;
     } else {
         // Create new record
         hashRecord* new_record = malloc(sizeof(hashRecord));
@@ -48,7 +46,8 @@ bool insert(char* name, uint32_t salary, FILE* output) {
                 new_record->next = head;
                 head = new_record;
             }
-            success = true;
+            timestamp = get_current_time_in_micro();
+            fprintf(output, "%ld: INSERT,%u,%s,%u\n", timestamp, hash, name, salary);
         }
     }
 
@@ -66,5 +65,5 @@ bool insert(char* name, uint32_t salary, FILE* output) {
     }
     pthread_mutex_unlock(&cv_mutex);
 
-    return success;
+    // return success;
 }

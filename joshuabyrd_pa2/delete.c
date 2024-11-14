@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-bool delete(char* name, FILE* output) {
+void delete(char* name, FILE* output) {
     uint64_t timestamp;
 
     // Wait for all inserts to complete
@@ -20,11 +20,11 @@ bool delete(char* name, FILE* output) {
     pthread_rwlock_wrlock(&rwlock);
     timestamp = get_current_time_in_micro();
     fprintf(output, "%lu: WRITE LOCK ACQUIRED\n", timestamp);
+    fprintf(output, "%lu: DELETE AWAKENED\n", timestamp);
     lock_acquisitions++;
 
     hashRecord* current = head;
     hashRecord* prev = NULL;
-    bool success = false;
 
     // Find and delete record
     while (current && current->hash <= hash) {
@@ -34,8 +34,10 @@ bool delete(char* name, FILE* output) {
             } else {
                 head = current->next;
             }
+            // Delete record
             free(current);
-            success = true;
+            timestamp = get_current_time_in_micro();
+            fprintf(output, "%ld: DELETE,%s\n", timestamp, name);
             break;
         }
         prev = current;
@@ -48,5 +50,4 @@ bool delete(char* name, FILE* output) {
     fprintf(output, "%lu: WRITE LOCK RELEASED\n", timestamp);
     lock_releases++;
 
-    return success;
 }

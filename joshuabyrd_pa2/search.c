@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-hashRecord* search(char* name, FILE* output) {
+void search(char* name, FILE* output) {
     time_t timestamp;
     uint32_t hash = jenkins_one_at_a_time_hash(name);
 
@@ -29,11 +29,18 @@ hashRecord* search(char* name, FILE* output) {
         current = current->next;
     }
 
+    if (current) {
+       timestamp = get_current_time_in_micro();
+       fprintf(output, "%ld: SEARCH,%s\n", timestamp, name);
+    }
+    else {
+        timestamp = get_current_time_in_micro();
+        fprintf(output, "%ld: SEARCH: No record found\n", timestamp);
+    }
+
     // Release read lock
     pthread_rwlock_unlock(&rwlock);
     timestamp = get_current_time_in_micro();
     fprintf(output, "%ld: READ LOCK RELEASED\n", timestamp);
     lock_releases++;
-
-    return result;
 }

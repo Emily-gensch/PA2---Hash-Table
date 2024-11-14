@@ -33,7 +33,6 @@ uint64_t get_current_time_in_micro() {
 
 // Each thread runs processs_command
 void* process_command(void* arg) {
-    time_t timestamp;
     // Get command and output file
     threadArg* thread_arg = (threadArg*)arg;
     char command_line[MAX_LINE];
@@ -41,31 +40,18 @@ void* process_command(void* arg) {
     FILE* output = thread_arg->output;
     
     char* command = strtok(command_line, ",");
-    char* param1 = strtok(NULL, ",");
-    char* param2 = strtok(NULL, ",");
+    char* name = strtok(NULL, ",");
+    char* salary_string = strtok(NULL, ",");
     
     if (strcmp(command, "insert") == 0) {
-        uint32_t salary = atoi(param2);
-        insert(param1, salary, output);
-        timestamp = get_current_time_in_micro();
-        fprintf(output, "%ld: INSERT,%s,%u\n", timestamp, param1, salary);
+        uint32_t salary = atoi(salary_string);
+        insert(name, salary, output);
     }
     else if (strcmp(command, "delete") == 0) {
-        delete(param1, output);
-        timestamp = get_current_time_in_micro();
-        fprintf(output, "%ld: DELETE,%s\n", timestamp, param1);
+        delete(name, output);
     }
     else if (strcmp(command, "search") == 0) {
-        hashRecord* record = search(param1, output);
-        if (record) {
-            timestamp = get_current_time_in_micro();
-            fprintf(output, "%ld: SEARCH,%s\n", timestamp, param1);
-            // fprintf(output, "%u,%s,%u\n", record->hash, record->name, record->salary);
-            // free(record);
-        } else {
-            timestamp = get_current_time_in_micro();
-            fprintf(output, "%ld: SEARCH: No record found\n", timestamp);
-        }
+        search(name, output); 
     }
     else if (strcmp(command, "print") == 0) {
         print_table(output);
@@ -120,7 +106,8 @@ int main() {
     }
     
     // Print to output_file
-    fprintf(output_file, "\nNumber of lock acquisitions: %d\n", lock_acquisitions);
+    fprintf(output_file, "Finished all threads.\n");
+    fprintf(output_file, "Number of lock acquisitions: %d\n", lock_acquisitions);
     fprintf(output_file, "Number of lock releases: %d\n", lock_releases);
     print_table(output_file);
     
