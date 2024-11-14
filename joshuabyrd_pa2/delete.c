@@ -8,7 +8,6 @@ void delete(char* name, FILE* output) {
     // Wait for all inserts to complete
     pthread_mutex_lock(&cv_mutex);
     while (pending_inserts > 0) {
-        timestamp = get_current_time_in_micro();
         pthread_cond_wait(&insert_complete, &cv_mutex);
     }
     pthread_mutex_unlock(&cv_mutex);
