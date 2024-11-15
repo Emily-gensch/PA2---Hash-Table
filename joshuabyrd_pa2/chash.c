@@ -6,11 +6,11 @@
 #include <pthread.h>
 #include <time.h>
 
-#define MAX_LINE 256
-#define MAX_THREADS 100
+#define MAX_LINE_SIZE 1000
+#define MAX_NUMBER_THREADS 1000
 
 typedef struct {
-    char command[MAX_LINE];
+    char command[MAX_LINE_SIZE];
     FILE* output;
 } threadArg;
 
@@ -23,7 +23,7 @@ int lock_acquisitions = 0;
 int lock_releases = 0;
 hashRecord* head = NULL;
 
-// Util function to get time in milliseconds
+// Util function to get time in microseconds
 uint64_t get_current_time_in_micro() {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
@@ -35,7 +35,7 @@ uint64_t get_current_time_in_micro() {
 void* process_command(void* arg) {
     // Get command and output file
     threadArg* thread_arg = (threadArg*)arg;
-    char command_line[MAX_LINE];
+    char command_line[MAX_LINE_SIZE];
     strcpy(command_line, thread_arg->command);
     FILE* output = thread_arg->output;
     
@@ -66,15 +66,15 @@ int main() {
     FILE* output_file = fopen("output.txt", "w");
     
     if (!command_file || !output_file) {
-        perror("Error opening files");
+        fprintf(output_file, "Error opening files\n");
         return 1;
     }
     
     init_table();
     
-    char line[MAX_LINE];
+    char line[MAX_LINE_SIZE];
     int num_threads = 0;
-    pthread_t threads[MAX_THREADS];
+    pthread_t threads[MAX_NUMBER_THREADS];
     
     // Get number of threads
     if (fgets(line, sizeof(line), command_file)) {
@@ -89,7 +89,7 @@ int main() {
     
     // Process commands
     int thread_index = 0;
-    while (fgets(line, sizeof(line), command_file) && thread_index < num_threads) {
+    while (fgets(line, sizeof(line), command_file)) {
         line[strcspn(line, "\n")] = 0;
         
         threadArg* arg = malloc(sizeof(threadArg));
@@ -97,7 +97,7 @@ int main() {
         arg->output = output_file;
         
         pthread_create(&threads[thread_index], NULL, process_command, arg);
-        thread_index++;
+        thread_index += 1;
     }
     
     // Wait for all threads to complete
@@ -113,6 +113,9 @@ int main() {
     
     // Cleanup
     destroy_table();
+    pthread_rwlock_destroy(&rwlock);
+    pthread_mutex_destroy(&cv_mutex);
+    pthread_cond_destroy(&insert_complete);
     fclose(command_file);
     fclose(output_file);
     
